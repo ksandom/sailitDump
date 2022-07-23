@@ -1,0 +1,13 @@
+#!/bin/bash
+# Count the number of entries that exist in the structure.
+
+count=0
+
+while read fileName; do
+    fileEntries="$(grep '^\* ' "$fileName" | wc -l)"
+    let count=$count+$fileEntries
+    echo "$fileName: $fileEntries"
+done < <(find -name entries.md)
+
+echo
+echo "$count"

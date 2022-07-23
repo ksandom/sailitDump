@@ -1,0 +1,43 @@
+#!/bin/bash
+# Dump sailfish's sailit structure to a directory and file structure.
+
+fileName="$(pwd)/$1"
+
+function dumpID
+{
+    local id="$1"
+    local rootTitle="$(echo "$2" | sed 's=/=__=g;s=^-=_-=g')"
+
+    #echo "Dumping id=$id title=\"$rootTitle\" from file $fileName ..."
+
+    mkdir -p "$rootTitle"
+    cd "$rootTitle"
+    pwd
+
+    # Entries.
+    echo -e "# Entries in ${rootTitle}\n" > entries.md
+
+    sql="select title,id from items where parent=$id and type=0;"
+    #echo "$sql" | sqlite3 "$fileName"
+    while read line; do
+        title="$(echo "$line" | cut -d'|' -f1 )"
+        lineID="$(echo "$line" | cut -d'|' -f2 )"
+        echo "* $title" >> entries.md
+    done < <(echo "$sql" | sqlite3 "$fileName")
+
+    ln -sf entries.md "${rootTitle}-entries.md"
+
+    # Folders.
+    sql="select title,id from items where parent=$id and type=1;"
+    #echo "$sql" | sqlite3 "$fileName"
+    while read line; do
+        title="$(echo "$line" | cut -d'|' -f1 )"
+        lineID="$(echo "$line" | cut -d'|' -f2 )"
+
+        dumpID "$lineID" "$title"
+    done < <(echo "$sql" | sqlite3 "$fileName")
+
+    cd ..
+}
+
+dumpID 0 "root"
